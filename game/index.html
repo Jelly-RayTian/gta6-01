@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solmar Bay: Heatwave</title>
+<script type="importmap">{"imports": {"three": "./vendor/three.module.min.js"}}</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1530; font-family: 'Trebuchet MS', 'Segoe UI', sans-serif; color: #fff; user-select: none; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  [hidden] { display: none !important; }
+  #hud > * { position: absolute; text-shadow: 0 2px 4px #000a; }
+  #mapWrap { left: 22px; bottom: 22px; width: 220px; height: 220px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 3px #1a1a2ecc, 0 6px 18px #0008; overflow: hidden; background: #234; }
+  #minimap { width: 220px; height: 220px; display: block; }
+  #clock { left: 22px; bottom: 250px; font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+  #vitals { left: 256px; bottom: 26px; width: 250px; }
+  #hpBar { height: 14px; background: #0007; border: 2px solid #fff; border-radius: 8px; overflow: hidden; }
+  #hp { height: 100%; width: 100%; background: linear-gradient(90deg, #ff4d6d, #ff9a5c); transition: width .15s; }
+  #weapon { margin-top: 6px; font-size: 20px; font-weight: 700; }
+  #zone { left: 256px; bottom: 82px; font-size: 18px; opacity: .92; letter-spacing: 2px; text-transform: uppercase; }
+  #topRight { right: 28px; top: 20px; text-align: right; }
+  #money { font-size: 40px; font-weight: 800; color: #7dff9b; letter-spacing: 1px; }
+  #stars { font-size: 34px; letter-spacing: 4px; color: #ffffff55; margin-top: 2px; }
+  #stars .on { color: #ffd93d; text-shadow: 0 0 10px #ff9d00; }
+  #stars.flash .on { animation: blink .5s infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  #objective { left: 50%; top: 22px; transform: translateX(-50%); text-align: center; max-width: 560px; background: linear-gradient(180deg, #151c33dd, #151c33aa); padding: 10px 22px; border-radius: 12px; border-left: 5px solid #ffd24a; }
+  #objTitle { display: block; font-size: 13px; letter-spacing: 3px; color: #ffd24a; text-transform: uppercase; }
+  #objText { font-size: 19px; font-weight: 600; }
+  #objMeta { display: block; font-size: 14px; color: #9fe8ff; margin-top: 2px; }
+  #speed { right: 30px; bottom: 26px; font-size: 52px; font-weight: 800; font-style: italic; text-align: right; }
+  #speed small { font-size: 18px; display: block; letter-spacing: 3px; opacity: .8; font-style: normal; }
+  #prompt { left: 50%; bottom: 120px; transform: translateX(-50%); font-size: 20px; background: #0009; padding: 6px 16px; border-radius: 8px; }
+  #toast { left: 50%; bottom: 200px; transform: translateX(-50%); font-size: 18px; max-width: 640px; text-align: center; background: #101830dd; padding: 10px 20px; border-radius: 10px; }
+  #banner { left: 0; right: 0; top: 36%; text-align: center; font-size: 64px; font-weight: 900; letter-spacing: 6px; color: #ffd24a; text-shadow: 0 4px 20px #000c; }
+  #banner small { display: block; font-size: 26px; letter-spacing: 3px; color: #fff; font-weight: 600; }
+  #cross { left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border: 2px solid #fff; border-radius: 50%; opacity: .8; box-shadow: 0 0 4px #000; }
+  #cross::after { content: ''; position: absolute; left: 8px; top: 8px; width: 2px; height: 2px; background: #fff; }
+  #vignette { inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, #ff0020 130%); opacity: 0; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  #title { background: linear-gradient(180deg, #1a0f3a22 0%, #1a0f3a00 35%, #1a0f3acc 100%); justify-content: flex-end; padding-bottom: 38px; box-sizing: border-box; }
+  #title h1 { margin: 0; font-size: 92px; letter-spacing: 8px; font-style: italic; text-transform: uppercase; background: linear-gradient(180deg, #fff3b0, #ff8a5c 55%, #ff3d7f); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 14px #000a); }
+  #title h2 { margin: -6px 0 18px; font-size: 24px; letter-spacing: 12px; color: #ffe6b0; text-shadow: 0 2px 8px #000; font-weight: 600; }
+  .btns { display: flex; gap: 14px; margin: 8px 0 14px; }
+  button { font: inherit; font-size: 22px; font-weight: 700; padding: 12px 34px; border-radius: 10px; border: 2px solid #ffd24a; background: #1c1440dd; color: #ffe9a8; cursor: pointer; letter-spacing: 2px; }
+  button:hover { background: #ffd24a; color: #1c1440; }
+  button:disabled { opacity: .35; cursor: default; }
+  .story { max-width: 760px; font-size: 16px; line-height: 1.45; color: #ffeedd; text-shadow: 0 1px 6px #000; margin: 4px 0; }
+  .controls { display: grid; grid-template-columns: repeat(4, auto); gap: 4px 22px; font-size: 14px; background: #0b0b20b0; padding: 10px 20px; border-radius: 10px; color: #e8e8ff; text-align: left; }
+  .controls b { color: #ffd24a; }
+  #pause, #missions, #over { background: #0b0a1fcc; }
+  .panel { background: #171a36; border: 2px solid #ffd24a55; border-radius: 14px; padding: 22px 34px; min-width: 520px; text-align: left; }
+  .panel h3 { margin: 0 0 12px; font-size: 26px; letter-spacing: 4px; color: #ffd24a; text-align: center; }
+  .mrow { padding: 8px 0; border-bottom: 1px solid #ffffff22; font-size: 18px; display: flex; justify-content: space-between; gap: 30px; }
+  .mrow.done { color: #7dff9b; } .mrow.locked { opacity: .45; } .mrow.next { color: #ffd24a; }
+  .stat { font-size: 15px; margin-top: 12px; color: #bcd; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+  #over h1 { font-size: 110px; letter-spacing: 10px; margin: 0; text-transform: uppercase; }
+  #over.wasted h1 { color: #ff3b4e; } #over.busted h1 { color: #4da3ff; }
+  #over p { font-size: 22px; margin: 6px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+  <div id="mapWrap"><canvas id="minimap" width="220" height="220"></canvas></div>
+  <div id="clock"></div>
+  <div id="zone"></div>
+  <div id="vitals"><div id="hpBar"><div id="hp"></div></div><div id="weapon"></div></div>
+  <div id="topRight"><div id="money">$0</div><div id="stars"></div></div>
+  <div id="objective" hidden><span id="objTitle"></span><span id="objText"></span><span id="objMeta"></span></div>
+  <div id="speed"></div>
+  <div id="prompt" hidden></div>
+  <div id="toast" hidden></div>
+  <div id="banner" hidden></div>
+  <div id="cross"></div>
+  <div id="vignette"></div>
+</div>
+<div id="title" class="screen" hidden>
+  <h1>Solmar Bay</h1><h2>HEATWAVE</h2>
+  <div class="story">Danny Cole steps off the bus into Solmar Bay with a stolen watch and a debt to fixer Rita Vance. Work for her, outrun the SBPD, and take down the Harbor Kings and their boss Victor Hale before the summer ends.</div>
+  <div class="btns"><button id="btnNew">New Game</button><button id="btnCont">Continue</button></div>
+  <div class="controls"><span><b>W A S D</b> move / drive</span><span><b>Shift</b> sprint</span><span><b>Space</b> jump / handbrake</span><span><b>Mouse</b> look (click to capture)</span>
+    <span><b>E</b> enter / exit car</span><span><b>Click</b> shoot</span><span><b>R</b> reload</span><span><b>F</b> punch</span>
+    <span><b>Right Mouse</b> aim</span><span><b>H</b> horn</span><span><b>Tab</b> missions</span><span><b>Esc</b> pause</span></div>
+</div>
+<div id="pause" class="screen" hidden><div class="panel"><h3>PAUSED</h3><div class="btns" style="justify-content:center"><button id="btnResume">Resume</button><button id="btnMissions">Missions</button><button id="btnSave">Save</button><button id="btnQuit">Quit</button></div><div id="pauseMsg" class="stat" style="justify-content:center"></div></div></div>
+<div id="missions" class="screen" hidden><div class="panel"><h3>MISSIONS</h3><div id="mlist"></div><div id="mstats" class="stat"></div><div class="btns" style="justify-content:center"><button id="btnMBack">Back</button></div></div></div>
+<div id="over" class="screen" hidden><h1 id="overTitle"></h1><p id="overSub"></p></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
