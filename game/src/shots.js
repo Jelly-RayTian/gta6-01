@@ -89,7 +89,7 @@ export function stageShot(name, seed = 1) {
     run(9, gunman);
     let guard = 0; const inp = emptyInput(); // finish on a frame where the pistol has just fired
     while (!(P.fireT > 0.15) && guard++ < 400) { gunman(inp, 20 + guard % 40); stepGame(DT, inp); W.events.length = 0; frameCamera(DT, { ...inp, mdx: 0, mdy: 0 }); }
-    W.toast = null; return 'play';
+    W.toast = null; W.banner = null; return 'play';
   }
   // start: the title screen over the plaza at golden hour, traffic running
   W.clock = 18.3;

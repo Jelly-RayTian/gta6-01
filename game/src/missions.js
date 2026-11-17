@@ -63,7 +63,7 @@ export function jumpToStage(i) { W.mission.stage = i; enterStage(W.mission); }
 export function startMission(i) {
   const def = MISSIONS[i]; if (!def) return;
   W.mission = { def, stage: 0, car: null, enemies: [], target: null, timer: null, obj: '', passenger: false };
-  banner(def.title.toUpperCase(), def.giver, 3); note(def.intro, 9); emit('chime', 0, 0); enterStage(W.mission);
+  banner(def.title.toUpperCase(), def.giver, 1.6); note(def.intro, 9); emit('chime', 0, 0); enterStage(W.mission);
 }
 export function cleanupMission() {
   const m = W.mission; if (!m) return;
