@@ -2,7 +2,7 @@
 // Copies the static game (game/) and its screenshots to the output directory, then writes
 // dossier.json, the summary the judge reads, using the kit's vendored library.
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
@@ -20,9 +20,17 @@ function copyTree(name: string, required: boolean): void {
   cpSync(from, join(outDir, name), { recursive: true });
 }
 
+if (!existsSync(join(root, 'game', 'index.html'))) {
+  throw new Error('game/index.html is missing; the hand-in needs a static entry page');
+}
+const screenshotsDir = join(root, 'screenshots');
+if (!existsSync(screenshotsDir) || readdirSync(screenshotsDir).length === 0) {
+  throw new Error('screenshots/ is missing or empty; capture the ?shot= renders first');
+}
+
 mkdirSync(outDir, { recursive: true });
 copyTree('game', true);
-copyTree('screenshots', false);
+copyTree('screenshots', true);
 
 const caps = {
   text_max_bytes: 163840,
@@ -32,4 +40,25 @@ const caps = {
   game_path_max_bytes: 1000,
 };
 writeFileSync(join(outDir, 'dossier.json'), buildDossier(outDir, caps));
-console.log(`wrote ${outDir}/dossier.json`);
+
+// Summarise the output so a silent, empty hand-in is impossible.
+function tally(dir: string): { files: number; bytes: number } {
+  let files = 0;
+  let bytes = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      const sub = tally(p);
+      files += sub.files;
+      bytes += sub.bytes;
+    } else {
+      files += 1;
+      bytes += statSync(p).size;
+    }
+  }
+  return { files, bytes };
+}
+const total = tally(outDir);
+const shotNames = readdirSync(join(outDir, 'screenshots')).sort().join(', ');
+console.log(`wrote ${outDir}/dossier.json (${total.files} files, ${total.bytes} bytes total)`);
+console.log(`screenshots: ${shotNames}`);

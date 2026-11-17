@@ -11,6 +11,8 @@ run from the law and take down the Harbor Kings crew and their boss, Victor Hale
 Everything is original and procedural: city, vehicles, characters, story, sounds (WebAudio) and music. No
 audio or image files, no network. three.js is vendored (`game/vendor/three.module.min.js`).
 
+Bounty page: https://make.fun/bounty/gta6-01
+
 ## Run
 ```
 node serve.ts          # then open http://localhost:8080
